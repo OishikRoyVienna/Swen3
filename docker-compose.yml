@@ -2,17 +2,33 @@ services:
   postgres:
     image: postgres:17
     container_name: swen3-postgres
-
     environment:
       POSTGRES_DB: paperless
       POSTGRES_USER: paperless
       POSTGRES_PASSWORD: paperless
-
     ports:
       - "5432:5432"
-
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paperless -d paperless"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: swen3-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paperless
+      SPRING_DATASOURCE_USERNAME: paperless
+      SPRING_DATASOURCE_PASSWORD: paperless
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
