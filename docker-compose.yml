@@ -30,5 +30,13 @@ services:
       postgres:
         condition: service_healthy
 
+  ui:
+    build: ./ui
+    container_name: swen3-ui
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:

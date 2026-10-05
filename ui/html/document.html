@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paperless – Document</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <a href="index.html" class="brand">Paperless</a>
+    <nav><a href="index.html">Dashboard</a></nav>
+</header>
+
+<main class="container">
+    <a href="index.html" class="back">&larr; Back to dashboard</a>
+    <p id="page-message" class="message" hidden></p>
+
+    <div id="content" hidden>
+        <section class="card">
+            <div class="section-header">
+                <h1 id="doc-title"></h1>
+                <button id="delete-document" class="btn danger">Delete document</button>
+            </div>
+            <dl class="details">
+                <dt>ID</dt><dd id="doc-id"></dd>
+                <dt>Filename</dt><dd id="doc-filename"></dd>
+                <dt>Content type</dt><dd id="doc-contentType"></dd>
+                <dt>Uploaded</dt><dd id="doc-uploadedAt"></dd>
+            </dl>
+        </section>
+
+        <section class="card">
+            <h2>Edit document</h2>
+            <form id="document-form" novalidate>
+                <div class="form-row">
+                    <label for="title">Title *</label>
+                    <input id="title" name="title" data-field="title" type="text" maxlength="255" required>
+                    <span class="field-error" id="title-error"></span>
+                </div>
+                <div class="form-row">
+                    <label for="filename">Filename *</label>
+                    <input id="filename" name="filename" data-field="filename" type="text" maxlength="255" required>
+                    <span class="field-error" id="filename-error"></span>
+                </div>
+                <div class="form-row">
+                    <label for="contentType">Content type</label>
+                    <input id="contentType" name="contentType" data-field="contentType" type="text"
+                           maxlength="255" list="content-types">
+                    <datalist id="content-types">
+                        <option value="application/pdf">
+                        <option value="image/png">
+                        <option value="image/jpeg">
+                        <option value="text/plain">
+                    </datalist>
+                    <span class="field-error" id="contentType-error"></span>
+                </div>
+                <button type="submit" class="btn primary">Save changes</button>
+                <p id="form-message" class="message" hidden></p>
+            </form>
+        </section>
+
+        <section class="card">
+            <h2>Comments</h2>
+            <ul id="comment-list" class="comments"></ul>
+            <p id="no-comments" class="muted" hidden>No comments yet.</p>
+            <form id="comment-form" novalidate>
+                <div class="form-row">
+                    <label for="comment-text">New comment *</label>
+                    <textarea id="comment-text" name="text" data-field="text" rows="3" maxlength="255"
+                              required></textarea>
+                    <span class="field-error" id="comment-text-error"></span>
+                </div>
+                <button type="submit" class="btn primary">Add comment</button>
+                <p id="comment-message" class="message" hidden></p>
+            </form>
+        </section>
+    </div>
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/document.js"></script>
+</body>
+</html>
