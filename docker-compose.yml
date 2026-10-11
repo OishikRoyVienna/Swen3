@@ -31,7 +31,7 @@ services:
         condition: service_healthy
 
   ui:
-    build: ./ui
+    build: ./ui-react
     container_name: swen3-ui
     ports:
       - "80:80"
