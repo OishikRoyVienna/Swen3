@@ -1,9 +1,9 @@
-
 :root {
   font-family: Arial, sans-serif;
   color: #e5e7eb;
   background-color: #111827;
   font-synthesis: none;
+  color-scheme: dark;
 }
 
 * {
@@ -16,19 +16,38 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
-input {
+input,
+select,
+textarea {
   width: 100%;
   padding: 12px;
   border: 1px solid #475569;
   border-radius: 8px;
-  background: #1f2937;
+  background: #111827;
   color: white;
 }
 
-input:focus {
+textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+a:focus-visible,
+button:focus-visible {
   outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
 }
