@@ -2,6 +2,8 @@ package at.fhtw.swen3.controller;
 
 import at.fhtw.swen3.dto.DocumentDto;
 import at.fhtw.swen3.dto.DocumentRequest;
+import at.fhtw.swen3.exception.MessageQueueException;
+import at.fhtw.swen3.exception.RepositoryException;
 import at.fhtw.swen3.exception.ResourceNotFoundException;
 import at.fhtw.swen3.service.DocumentService;
 import org.junit.jupiter.api.Test;
@@ -100,5 +102,44 @@ class DocumentControllerTest {
     void delete_returns204() throws Exception {
         mockMvc.perform(delete("/api/documents/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void create_returns503_whenQueueUnavailable() throws Exception {
+        when(documentService.create(any())).thenThrow(new MessageQueueException("queue down", null));
+
+        DocumentRequest request = new DocumentRequest();
+        request.setTitle("Invoice");
+        request.setFilename("invoice.pdf");
+
+        mockMvc.perform(post("/api/documents")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503));
+    }
+
+    @Test
+    void getAll_returns500_withoutInternalDetails_whenDatabaseFails() throws Exception {
+        when(documentService.getAll()).thenThrow(new RepositoryException("Database error", new RuntimeException("secret")));
+
+        mockMvc.perform(get("/api/documents"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("A database error occurred. Please try again later."));
+    }
+
+    @Test
+    void create_returns400_whenJsonMalformed() throws Exception {
+        mockMvc.perform(post("/api/documents")
+                        .contentType("application/json")
+                        .content("{ not json"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Malformed JSON request body"));
+    }
+
+    @Test
+    void getById_returns400_whenIdNotNumeric() throws Exception {
+        mockMvc.perform(get("/api/documents/abc"))
+                .andExpect(status().isBadRequest());
     }
 }
