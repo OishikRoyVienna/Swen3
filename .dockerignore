@@ -1,0 +1,8 @@
+# Only pom.xml, the Maven wrapper and src/ are needed to build the backend image
+target
+ui-react
+ocr-worker
+.git
+.idea
+.claude
+.kilo

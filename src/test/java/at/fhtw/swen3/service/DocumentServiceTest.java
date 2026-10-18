@@ -3,7 +3,11 @@ package at.fhtw.swen3.service;
 import at.fhtw.swen3.dto.DocumentDto;
 import at.fhtw.swen3.dto.DocumentRequest;
 import at.fhtw.swen3.entity.Document;
+import at.fhtw.swen3.exception.MessageQueueException;
+import at.fhtw.swen3.exception.RepositoryException;
 import at.fhtw.swen3.exception.ResourceNotFoundException;
+import at.fhtw.swen3.messaging.OcrMessage;
+import at.fhtw.swen3.messaging.OcrMessageProducer;
 import at.fhtw.swen3.repository.DocumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,11 +31,22 @@ class DocumentServiceTest {
     @Mock
     private DocumentRepository documentRepository;
 
+    @Mock
+    private OcrMessageProducer ocrMessageProducer;
+
     private DocumentService documentService;
 
     @BeforeEach
     void setUp() {
-        documentService = new DocumentService(documentRepository);
+        documentService = new DocumentService(documentRepository, ocrMessageProducer);
+    }
+
+    private DocumentRequest sampleRequest() {
+        DocumentRequest request = new DocumentRequest();
+        request.setTitle("Invoice");
+        request.setFilename("invoice.pdf");
+        request.setContentType("application/pdf");
+        return request;
     }
 
     private Document sampleDocument(Long id) {
@@ -62,6 +78,42 @@ class DocumentServiceTest {
         assertThat(result.getUploadedAt()).isNotNull();
         verify(documentRepository, times(1)).save(any(Document.class));
         verifyNoMoreInteractions(documentRepository);
+    }
+
+    @Test
+    void create_sendsOcrMessageForSavedDocument() {
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> {
+            Document toSave = invocation.getArgument(0);
+            toSave.setId(5L);
+            return toSave;
+        });
+
+        documentService.create(sampleRequest());
+
+        ArgumentCaptor<OcrMessage> captor = ArgumentCaptor.forClass(OcrMessage.class);
+        verify(ocrMessageProducer).send(captor.capture());
+        assertThat(captor.getValue().documentId()).isEqualTo(5L);
+        assertThat(captor.getValue().filename()).isEqualTo("invoice.pdf");
+    }
+
+    @Test
+    void create_throwsMessageQueueException_whenQueueUnavailable() {
+        when(documentRepository.save(any(Document.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new MessageQueueException("queue down", null)).when(ocrMessageProducer).send(any());
+
+        assertThatThrownBy(() -> documentService.create(sampleRequest()))
+                .isInstanceOf(MessageQueueException.class);
+    }
+
+    @Test
+    void create_throwsRepositoryException_andSendsNoMessage_whenDatabaseFails() {
+        when(documentRepository.save(any(Document.class)))
+                .thenThrow(new DataAccessResourceFailureException("connection refused"));
+
+        assertThatThrownBy(() -> documentService.create(sampleRequest()))
+                .isInstanceOf(RepositoryException.class)
+                .hasCauseInstanceOf(DataAccessResourceFailureException.class);
+        verifyNoInteractions(ocrMessageProducer);
     }
 
     @Test

@@ -1,2 +1,3 @@
 /mvnw text eol=lf
+/ocr-worker/mvnw text eol=lf
 *.cmd text eol=crlf
