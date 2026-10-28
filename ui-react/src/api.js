@@ -1,10 +1,17 @@
 // REST-Client für das Spring-Boot-Backend.
 // Relative URLs: im Container leitet nginx /api an das Backend weiter, im Dev-Modus der Vite-Proxy.
 async function request(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
-  })
+  const method = options.method ?? 'GET'
+  let response
+  try {
+    response = await fetch(`/api${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options
+    })
+  } catch (err) {
+    console.error(`[api] ${method} /api${path}: Server nicht erreichbar`, err)
+    throw new Error('Server nicht erreichbar. Bitte später erneut versuchen.', { cause: err })
+  }
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`
@@ -16,6 +23,9 @@ async function request(path, options = {}) {
     } catch {
       // Antwort enthielt kein JSON
     }
+    // 5xx = Fehler im Server, 4xx = ungültige Anfrage
+    const logLevel = response.status >= 500 ? 'error' : 'warn'
+    console[logLevel](`[api] ${method} /api${path} -> ${response.status}: ${message}`)
     throw new Error(message)
   }
 
