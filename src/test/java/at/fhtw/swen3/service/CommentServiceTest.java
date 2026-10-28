@@ -34,7 +34,7 @@ class CommentServiceTest {
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, documentRepository);
+        commentService = new CommentServiceImpl(commentRepository, documentRepository);
     }
 
     private Document sampleDocument(Long id) {

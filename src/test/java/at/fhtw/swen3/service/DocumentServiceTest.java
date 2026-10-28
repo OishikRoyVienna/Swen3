@@ -7,7 +7,7 @@ import at.fhtw.swen3.exception.MessageQueueException;
 import at.fhtw.swen3.exception.RepositoryException;
 import at.fhtw.swen3.exception.ResourceNotFoundException;
 import at.fhtw.swen3.messaging.OcrMessage;
-import at.fhtw.swen3.messaging.OcrMessageProducer;
+import at.fhtw.swen3.messaging.OcrMessagePublisher;
 import at.fhtw.swen3.repository.DocumentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,13 +32,13 @@ class DocumentServiceTest {
     private DocumentRepository documentRepository;
 
     @Mock
-    private OcrMessageProducer ocrMessageProducer;
+    private OcrMessagePublisher ocrMessageProducer;
 
     private DocumentService documentService;
 
     @BeforeEach
     void setUp() {
-        documentService = new DocumentService(documentRepository, ocrMessageProducer);
+        documentService = new DocumentServiceImpl(documentRepository, ocrMessageProducer);
     }
 
     private DocumentRequest sampleRequest() {

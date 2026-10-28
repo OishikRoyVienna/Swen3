@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OcrMessageProducer {
+public class OcrMessageProducer implements OcrMessagePublisher {
 
     private static final Logger log = LoggerFactory.getLogger(OcrMessageProducer.class);
 
@@ -22,6 +22,7 @@ public class OcrMessageProducer {
         this.queueName = queueName;
     }
 
+    @Override
     public void send(OcrMessage message) {
         try {
             // default exchange: the routing key is the queue name
