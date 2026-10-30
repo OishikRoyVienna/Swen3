@@ -59,7 +59,7 @@ flowchart LR
 | `backend` | REST-API, Geschäftslogik, Datenbankzugriff, sendet OCR-Aufträge | [`src/`](src) |
 | `postgres` | speichert Dokumente und Kommentare (Volume `postgres_data`) | – |
 | `rabbitmq` | Message Broker zwischen Backend und Worker | – |
-| `ocr-worker` | verarbeitet OCR-Aufträge aus der Queue (OCR selbst noch leer) | [`ocr-worker/`](ocr-worker) |
+| `ocr-worker` | verarbeitet OCR-Aufträge aus der Queue (OCR selbst noch leer) und prüft regelmäßig die Dead-Letter-Queue | [`ocr-worker/`](ocr-worker) |
 
 ### Was passiert beim Anlegen eines Dokuments?
 
@@ -156,6 +156,7 @@ Fehler kommen einheitlich als JSON zurück: `{ "timestamp", "status", "error", "
 | **Exceptions pro Schicht** (`ServiceException`, `RepositoryException`, `MessageQueueException`) | man sieht sofort, wo ein Fehler entstand; zentral im `GlobalExceptionHandler` auf HTTP-Status abgebildet |
 | **OCR als eigener Dienst über eine Queue** | OCR ist langsam; der Upload wartet nicht darauf, der Worker kann unabhängig neu starten und skaliert werden |
 | **Dead-Letter-Queue** | kaputte Aufträge gehen nicht verloren und werden nicht endlos neu zugestellt |
+| **Geplanter DLQ-Check** (`DeadLetterQueueMonitor`, `@Scheduled`) | fehlgeschlagene Aufträge fallen auf: Der Worker prüft jede Minute die Queue und schreibt eine Warnung ins Log |
 | **nginx als Reverse Proxy** | UI und API haben denselben Origin, dadurch keine CORS-Konfiguration nötig |
 | **Validierung im Frontend und im Backend** | Frontend für schnelles Feedback, Backend zur Sicherheit, weil man die UI umgehen kann |
 | **Konfiguration über Umgebungsvariablen** | `application.properties` enthält Werte für den lokalen Start, docker-compose überschreibt sie (z. B. `SPRING_DATASOURCE_URL`) |
