@@ -16,6 +16,24 @@ services:
       timeout: 5s
       retries: 5
 
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: swen3-rustfs
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rustfs_data:/data
+    command:
+      - "--access-key"
+      - "rustfsadmin"
+      - "--secret-key"
+      - "rustfsadmin"
+      - "--address"
+      - ":9000"
+      - "--console-enable"
+      - "/data"
+
   rabbitmq:
     image: rabbitmq:4-management
     container_name: swen3-rabbitmq
@@ -37,6 +55,9 @@ services:
     ports:
       - "8080:8080"
     environment:
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/paperless
       SPRING_DATASOURCE_USERNAME: paperless
       SPRING_DATASOURCE_PASSWORD: paperless
@@ -49,6 +70,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      rustfs:
+        condition: service_started
 
   ocr-worker:
     build: ./ocr-worker
@@ -71,3 +94,5 @@ services:
 
 volumes:
   postgres_data:
+  rustfs_data:
+
