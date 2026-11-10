@@ -45,6 +45,37 @@ public class DocumentServiceImpl implements DocumentService {
         ocrMessageProducer.send(OcrMessage.from(saved));
         return DocumentMapper.toDto(saved);
     }
+    @Override
+    @Transactional
+    public DocumentDto createUploadedDocument(
+            String title,
+            String filename,
+            String contentType,
+            String objectKey
+    ) {
+        Document document = new Document();
+
+        document.setTitle(title);
+        document.setFilename(filename);
+        document.setContentType(contentType);
+        document.setObjectKey(objectKey);
+        document.setUploadedAt(LocalDateTime.now());
+
+        Document saved = Persistence.call(
+                "save uploaded document",
+                () -> documentRepository.save(document)
+        );
+
+        log.info(
+                "Uploaded document {} saved (objectKey '{}')",
+                saved.getId(),
+                saved.getObjectKey()
+        );
+
+        ocrMessageProducer.send(OcrMessage.from(saved));
+
+        return DocumentMapper.toDto(saved);
+    }
 
     @Override
     public DocumentDto getById(Long id) {

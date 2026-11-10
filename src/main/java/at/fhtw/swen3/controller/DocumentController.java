@@ -1,53 +1,151 @@
+
 package at.fhtw.swen3.controller;
 
 import at.fhtw.swen3.dto.DocumentDto;
 import at.fhtw.swen3.dto.DocumentRequest;
 import at.fhtw.swen3.service.DocumentService;
+import at.fhtw.swen3.service.RustFsStorageService;
+
 import jakarta.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/documents")
 public class DocumentController {
 
-    private static final Logger log = LoggerFactory.getLogger(DocumentController.class);
+    private static final Logger log =
+            LoggerFactory.getLogger(DocumentController.class);
 
     private final DocumentService documentService;
+    private final RustFsStorageService rustFsStorageService;
 
-    public DocumentController(DocumentService documentService) {
+    public DocumentController(
+            DocumentService documentService,
+            RustFsStorageService rustFsStorageService
+    ) {
         this.documentService = documentService;
+        this.rustFsStorageService = rustFsStorageService;
     }
 
+    // Bestehender Endpunkt: Dokument-Metadaten erstellen
     @PostMapping
-    public ResponseEntity<DocumentDto> create(@Valid @RequestBody DocumentRequest request) {
-        log.info("POST /api/documents (filename '{}')", request.getFilename());
-        return ResponseEntity.status(HttpStatus.CREATED).body(documentService.create(request));
+    public ResponseEntity<DocumentDto> create(
+            @Valid @RequestBody DocumentRequest request
+    ) {
+        log.info("POST /api/documents (filename '{}')",
+                request.getFilename());
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(documentService.create(request));
     }
 
+    // Neuer Endpunkt: PDF hochladen, in RustFS und PostgreSQL
+    // speichern und OCR-Auftrag an RabbitMQ senden
+    @PostMapping(
+            value = "/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<String> uploadDocument(
+            @RequestParam("file") MultipartFile file
+    ) throws IOException {
+
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body("Bitte eine PDF-Datei auswählen.");
+        }
+
+        byte[] data = file.getBytes();
+
+        // Einfache Prüfung der PDF-Dateisignatur
+        if (data.length < 5
+                || data[0] != '%'
+                || data[1] != 'P'
+                || data[2] != 'D'
+                || data[3] != 'F'
+                || data[4] != '-') {
+
+            return ResponseEntity.badRequest()
+                    .body("Nur PDF-Dateien sind erlaubt.");
+        }
+
+        // Eindeutigen Objektschlüssel erzeugen
+        String objectKey =
+                "documents/" + UUID.randomUUID() + ".pdf";
+
+        // PDF in RustFS speichern
+        rustFsStorageService.upload(objectKey, data);
+
+        // Dateinamen ermitteln
+        String filename = file.getOriginalFilename();
+
+        if (filename == null || filename.isBlank()) {
+            filename = "upload.pdf";
+        }
+
+        // Titel aus dem Dateinamen erzeugen
+        String title = filename.endsWith(".pdf")
+                ? filename.substring(0, filename.length() - 4)
+                : filename;
+
+        // Metadaten in PostgreSQL speichern
+        // und OCR-Auftrag an RabbitMQ senden
+        documentService.createUploadedDocument(
+                title,
+                filename,
+                "application/pdf",
+                objectKey
+        );
+
+        log.info(
+                "PDF '{}' in RustFS gespeichert unter '{}'",
+                filename,
+                objectKey
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(
+                        "PDF erfolgreich gespeichert. Object Key: "
+                                + objectKey
+                );
+    }
+
+    // Alle Dokumente abrufen
     @GetMapping
     public List<DocumentDto> getAll() {
         log.debug("GET /api/documents");
         return documentService.getAll();
     }
 
+    // Dokument anhand der ID abrufen
     @GetMapping("/{id}")
     public DocumentDto getById(@PathVariable Long id) {
         log.debug("GET /api/documents/{}", id);
         return documentService.getById(id);
     }
 
+    // Dokument aktualisieren
     @PutMapping("/{id}")
-    public DocumentDto update(@PathVariable Long id, @Valid @RequestBody DocumentRequest request) {
+    public DocumentDto update(
+            @PathVariable Long id,
+            @Valid @RequestBody DocumentRequest request
+    ) {
         log.info("PUT /api/documents/{}", id);
         return documentService.update(id, request);
     }
 
+    // Dokument löschen
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         log.info("DELETE /api/documents/{}", id);
