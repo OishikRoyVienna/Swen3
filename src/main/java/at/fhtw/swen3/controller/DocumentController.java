@@ -39,7 +39,7 @@ public class DocumentController {
         this.rustFsStorageService = rustFsStorageService;
     }
 
-    // Bestehender Endpunkt: Dokument-Metadaten erstellen
+    // Dokument-Metadaten erstellen
     @PostMapping
     public ResponseEntity<DocumentDto> create(
             @Valid @RequestBody DocumentRequest request
@@ -51,14 +51,15 @@ public class DocumentController {
                 .body(documentService.create(request));
     }
 
-    // Neuer Endpunkt: PDF hochladen, in RustFS und PostgreSQL
-    // speichern und OCR-Auftrag an RabbitMQ senden
+    // PDF mit optionalem Titel hochladen.
+    // Speicherung in RustFS und PostgreSQL, OCR über RabbitMQ.
     @PostMapping(
             value = "/upload",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<String> uploadDocument(
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "title", required = false) String requestedTitle
     ) throws IOException {
 
         if (file.isEmpty()) {
@@ -68,7 +69,7 @@ public class DocumentController {
 
         byte[] data = file.getBytes();
 
-        // Einfache Prüfung der PDF-Dateisignatur
+        // PDF-Dateisignatur prüfen
         if (data.length < 5
                 || data[0] != '%'
                 || data[1] != 'P'
@@ -80,13 +81,6 @@ public class DocumentController {
                     .body("Nur PDF-Dateien sind erlaubt.");
         }
 
-        // Eindeutigen Objektschlüssel erzeugen
-        String objectKey =
-                "documents/" + UUID.randomUUID() + ".pdf";
-
-        // PDF in RustFS speichern
-        rustFsStorageService.upload(objectKey, data);
-
         // Dateinamen ermitteln
         String filename = file.getOriginalFilename();
 
@@ -94,12 +88,26 @@ public class DocumentController {
             filename = "upload.pdf";
         }
 
-        // Titel aus dem Dateinamen erzeugen
-        String title = filename.endsWith(".pdf")
-                ? filename.substring(0, filename.length() - 4)
-                : filename;
+        // Titel aus Formular verwenden, falls vorhanden.
+        // Sonst Titel aus dem Dateinamen ableiten.
+        String title;
 
-        // Metadaten in PostgreSQL speichern
+        if (requestedTitle != null && !requestedTitle.isBlank()) {
+            title = requestedTitle.trim();
+        } else {
+            title = filename.toLowerCase().endsWith(".pdf")
+                    ? filename.substring(0, filename.length() - 4)
+                    : filename;
+        }
+
+        // Eindeutigen Objektschlüssel erzeugen
+        String objectKey =
+                "documents/" + UUID.randomUUID() + ".pdf";
+
+        // PDF in RustFS speichern
+        rustFsStorageService.upload(objectKey, data);
+
+        // Dokument einmalig in PostgreSQL speichern
         // und OCR-Auftrag an RabbitMQ senden
         documentService.createUploadedDocument(
                 title,
@@ -109,8 +117,9 @@ public class DocumentController {
         );
 
         log.info(
-                "PDF '{}' in RustFS gespeichert unter '{}'",
+                "PDF '{}' mit Titel '{}' in RustFS gespeichert unter '{}'",
                 filename,
+                title,
                 objectKey
         );
 
@@ -126,6 +135,14 @@ public class DocumentController {
     public List<DocumentDto> getAll() {
         log.debug("GET /api/documents");
         return documentService.getAll();
+    }
+
+    // Volltextsuche über Elasticsearch
+    @GetMapping("/search")
+    public List<DocumentDto> searchDocuments(
+            @RequestParam("q") String query
+    ) {
+        return documentService.search(query);
     }
 
     // Dokument anhand der ID abrufen

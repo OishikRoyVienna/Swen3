@@ -1,4 +1,3 @@
-
 package at.fhtw.swen3.config;
 
 import org.springframework.beans.factory.annotation.Value;

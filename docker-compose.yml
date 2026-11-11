@@ -1,4 +1,16 @@
 services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.1
+    container_name: swen3-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+
   postgres:
     image: postgres:17
     container_name: swen3-postgres
@@ -65,6 +77,7 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: paperless
       SPRING_RABBITMQ_PASSWORD: paperless
+      ELASTICSEARCH_URI: http://elasticsearch:9200
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,10 +93,13 @@ services:
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_USERNAME: paperless
       SPRING_RABBITMQ_PASSWORD: paperless
+      RUSTFS_ENDPOINT: http://rustfs:9000
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+      ELASTICSEARCH_URI: http://elasticsearch:9200
     depends_on:
       rabbitmq:
         condition: service_healthy
-
   ui:
     build: ./ui-react
     container_name: swen3-ui
@@ -95,4 +111,5 @@ services:
 volumes:
   postgres_data:
   rustfs_data:
+  elasticsearch_data:
 

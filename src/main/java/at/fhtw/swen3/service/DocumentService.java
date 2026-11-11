@@ -19,6 +19,7 @@ public interface DocumentService {
     DocumentDto getById(Long id);
 
     List<DocumentDto> getAll();
+    List<DocumentDto> search(String query);
 
     DocumentDto update(Long id, DocumentRequest request);
 
