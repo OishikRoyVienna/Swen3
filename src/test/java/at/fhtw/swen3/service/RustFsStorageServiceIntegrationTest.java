@@ -34,6 +34,16 @@ class RustFsStorageServiceIntegrationTest {
                 .forcePathStyle(true)
                 .build()) {
 
+            // Bucket bei Bedarf für den Integrationstest erstellen
+            boolean bucketExists = s3Client.listBuckets()
+                    .buckets()
+                    .stream()
+                    .anyMatch(b -> b.name().equals("paperless-documents"));
+
+            if (!bucketExists) {
+                s3Client.createBucket(b -> b.bucket("paperless-documents"));
+            }
+
             // Unser bereits implementierter Service
             RustFsStorageService storageService =
                     new RustFsStorageService(
