@@ -6,6 +6,7 @@ import at.fhtw.swen3.exception.MessageQueueException;
 import at.fhtw.swen3.exception.RepositoryException;
 import at.fhtw.swen3.exception.ResourceNotFoundException;
 import at.fhtw.swen3.service.DocumentService;
+import at.fhtw.swen3.service.RustFsStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -32,6 +33,9 @@ class DocumentControllerTest {
 
     @MockitoBean
     private DocumentService documentService;
+
+    @MockitoBean
+    private RustFsStorageService rustFsStorageService;
 
     private DocumentDto sampleDto(Long id) {
         DocumentDto dto = new DocumentDto();
