@@ -27,7 +27,8 @@ class OcrMessageProducerTest {
 
     private OcrMessageProducer producer;
 
-    private final OcrMessage message = new OcrMessage(1L, "invoice.pdf", "application/pdf", LocalDateTime.now());
+    private final OcrMessage message = new OcrMessage(1L, "invoice.pdf", "application/pdf", LocalDateTime.now(), "documents/invoice.pdf");
+
 
     @BeforeEach
     void setUp() {

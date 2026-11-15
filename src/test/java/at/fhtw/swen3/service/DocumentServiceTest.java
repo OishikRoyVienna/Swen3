@@ -16,7 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
-
+import at.fhtw.swen3.search.SearchDocumentRepository;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,13 +32,20 @@ class DocumentServiceTest {
     private DocumentRepository documentRepository;
 
     @Mock
+    private SearchDocumentRepository searchDocumentRepository;
+
+    @Mock
     private OcrMessagePublisher ocrMessageProducer;
 
     private DocumentService documentService;
 
     @BeforeEach
     void setUp() {
-        documentService = new DocumentServiceImpl(documentRepository, ocrMessageProducer);
+        documentService = new DocumentServiceImpl(
+                documentRepository,
+                ocrMessageProducer,
+                searchDocumentRepository
+        );
     }
 
     private DocumentRequest sampleRequest() {

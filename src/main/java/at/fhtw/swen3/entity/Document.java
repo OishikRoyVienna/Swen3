@@ -22,6 +22,9 @@ public class Document {
 
     private String contentType;
 
+    @Column(name = "object_key")
+    private String objectKey;
+
     @Column(nullable = false)
     private LocalDateTime uploadedAt;
 
@@ -77,5 +80,13 @@ public class Document {
 
     public void setComments(List<Comment> comments) {
         this.comments = comments;
+    }
+
+    public String getObjectKey() {
+        return objectKey;
+    }
+
+    public void setObjectKey(String objectKey) {
+        this.objectKey = objectKey;
     }
 }

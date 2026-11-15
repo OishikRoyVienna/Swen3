@@ -5,16 +5,21 @@ import at.fhtw.swen3.dto.DocumentRequest;
 
 import java.util.List;
 
-/**
- * Business logic for documents. The controller only knows this interface, not the implementation.
- */
 public interface DocumentService {
 
     DocumentDto create(DocumentRequest request);
 
+    DocumentDto createUploadedDocument(
+            String title,
+            String filename,
+            String contentType,
+            String objectKey
+    );
+
     DocumentDto getById(Long id);
 
     List<DocumentDto> getAll();
+    List<DocumentDto> search(String query);
 
     DocumentDto update(Long id, DocumentRequest request);
 

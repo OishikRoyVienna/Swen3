@@ -12,21 +12,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import at.fhtw.swen3.search.SearchDocumentRepository;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class DocumentServiceImpl implements DocumentService {
+    private final SearchDocumentRepository searchDocumentRepository;
 
     private static final Logger log = LoggerFactory.getLogger(DocumentServiceImpl.class);
 
     private final DocumentRepository documentRepository;
     private final OcrMessagePublisher ocrMessageProducer;
 
-    public DocumentServiceImpl(DocumentRepository documentRepository, OcrMessagePublisher ocrMessageProducer) {
+    public DocumentServiceImpl(
+            DocumentRepository documentRepository,
+            OcrMessagePublisher ocrMessageProducer,
+            SearchDocumentRepository searchDocumentRepository
+    ) {
         this.documentRepository = documentRepository;
         this.ocrMessageProducer = ocrMessageProducer;
+        this.searchDocumentRepository = searchDocumentRepository;
     }
 
     /**
@@ -45,6 +53,37 @@ public class DocumentServiceImpl implements DocumentService {
         ocrMessageProducer.send(OcrMessage.from(saved));
         return DocumentMapper.toDto(saved);
     }
+    @Override
+    @Transactional
+    public DocumentDto createUploadedDocument(
+            String title,
+            String filename,
+            String contentType,
+            String objectKey
+    ) {
+        Document document = new Document();
+
+        document.setTitle(title);
+        document.setFilename(filename);
+        document.setContentType(contentType);
+        document.setObjectKey(objectKey);
+        document.setUploadedAt(LocalDateTime.now());
+
+        Document saved = Persistence.call(
+                "save uploaded document",
+                () -> documentRepository.save(document)
+        );
+
+        log.info(
+                "Uploaded document {} saved (objectKey '{}')",
+                saved.getId(),
+                saved.getObjectKey()
+        );
+
+        ocrMessageProducer.send(OcrMessage.from(saved));
+
+        return DocumentMapper.toDto(saved);
+    }
 
     @Override
     public DocumentDto getById(Long id) {
@@ -57,7 +96,29 @@ public class DocumentServiceImpl implements DocumentService {
                 .map(DocumentMapper::toDto)
                 .toList();
     }
+    @Override
+    public List<DocumentDto> search(String query) {
+        if (query == null || query.isBlank()) {
+            return getAll();
+        }
 
+        return searchDocumentRepository
+                .findByContentContainingIgnoreCaseOrFilenameContainingIgnoreCase(
+                        query.trim(), query.trim()
+                )
+                .stream()
+                .map(result -> {
+                    try {
+                        return documentRepository.findById(Long.parseLong(result.getId()))
+                                .map(DocumentMapper::toDto)
+                                .orElse(null);
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                })
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
     @Override
     public DocumentDto update(Long id, DocumentRequest request) {
         Document document = findOrThrow(id);

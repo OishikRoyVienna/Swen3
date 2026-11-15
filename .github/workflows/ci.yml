@@ -18,6 +18,16 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+      - name: Start required services
+        working-directory: .
+        run: docker compose up -d --wait rustfs elasticsearch rabbitmq
+
+      - name: Wait for Elasticsearch and RustFS
+        working-directory: .
+        run: |
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9200/_cluster/health
+          curl -sS --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9000/ -o /dev/null
+
       - run: ./mvnw -B verify
 
   ocr-worker:
@@ -33,6 +43,16 @@ jobs:
           distribution: temurin
           java-version: "25"
           cache: maven
+      - name: Start required services
+        working-directory: .
+        run: docker compose up -d --wait rustfs elasticsearch rabbitmq
+
+      - name: Wait for Elasticsearch and RustFS
+        working-directory: .
+        run: |
+          curl -fsS --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9200/_cluster/health
+          curl -sS --retry 30 --retry-all-errors --retry-delay 2 http://localhost:9000/ -o /dev/null
+
       - run: ./mvnw -B verify
 
   frontend:
