@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { api, formatDate } from '../api'
 import { hasErrors, validateDocument } from '../validation'
 import DocumentFields from '../components/DocumentFields'
+import { useConfirm } from '../hooks/useConfirm'
 
 const EMPTY_FORM = {
   title: '',
@@ -24,6 +25,8 @@ function Dashboard() {
 
   const [selectedFile, setSelectedFile] = useState(null)
   const [fileInputKey, setFileInputKey] = useState(0)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [confirm, confirmDialog] = useConfirm()
 
   const errors = submitted ? validateDocument(form) : {}
 
@@ -46,10 +49,19 @@ function Dashboard() {
     loadDocuments()
   }, [loadDocuments])
 
+  // Lokale Vorschau der gewählten Datei, bevor sie hochgeladen wird
+  function updatePreview(file) {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setPreviewUrl(file ? URL.createObjectURL(file) : null)
+  }
+
   function handleFileChange(event) {
     const file = event.target.files?.[0] ?? null
 
     setSelectedFile(file)
+    updatePreview(file)
     setMessage(null)
 
     if (file) {
@@ -110,6 +122,7 @@ function Dashboard() {
 
       setForm(EMPTY_FORM)
       setSelectedFile(null)
+      updatePreview(null)
       setSubmitted(false)
       setFileInputKey(key => key + 1)
 
@@ -125,9 +138,10 @@ function Dashboard() {
   }
 
   async function handleDelete(doc) {
-    if (!window.confirm(
-        `Möchtest du "${doc.title}" inklusive Kommentaren wirklich löschen?`
-    )) {
+    if (!(await confirm({
+      title: 'Dokument löschen?',
+      message: `„${doc.title}“ wird mit allen Kommentaren gelöscht. Das kann nicht rückgängig gemacht werden.`
+    }))) {
       return
     }
 
@@ -175,6 +189,14 @@ function Dashboard() {
                 <p className="muted">
                   Ausgewählt: {selectedFile.name}
                 </p>
+            )}
+
+            {previewUrl && (
+                <iframe
+                    src={previewUrl}
+                    title="PDF-Vorschau"
+                    className="pdf-preview"
+                />
             )}
 
             <DocumentFields
@@ -283,6 +305,7 @@ function Dashboard() {
               )
           )}
         </section>
+        {confirmDialog}
       </main>
   )
 }

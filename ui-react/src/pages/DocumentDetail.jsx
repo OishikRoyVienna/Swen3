@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import { api, formatDate } from '../api'
 import { MAX_LENGTH, hasErrors, normalizeDocument, validateComment, validateDocument } from '../validation'
 import DocumentFields, { Field } from '../components/DocumentFields'
+import { useConfirm } from '../hooks/useConfirm'
 
 function toForm(doc) {
   return { title: doc.title, filename: doc.filename, contentType: doc.contentType ?? '' }
@@ -11,6 +12,7 @@ function toForm(doc) {
 function DocumentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [confirm, confirmDialog] = useConfirm()
   const validId = /^\d+$/.test(id)
 
   const [doc, setDoc] = useState(null)
@@ -89,7 +91,10 @@ function DocumentDetail() {
   }
 
   async function handleDeleteDocument() {
-    if (!window.confirm(`Möchtest du "${doc.title}" inklusive Kommentaren wirklich löschen?`)) {
+    if (!(await confirm({
+      title: 'Dokument löschen?',
+      message: `„${doc.title}“ wird mit allen Kommentaren gelöscht. Das kann nicht rückgängig gemacht werden.`
+    }))) {
       return
     }
     try {
@@ -120,7 +125,7 @@ function DocumentDetail() {
   }
 
   async function handleDeleteComment(commentId) {
-    if (!window.confirm('Diesen Kommentar löschen?')) {
+    if (!(await confirm({ title: 'Kommentar löschen?', message: 'Der Kommentar wird endgültig entfernt.' }))) {
       return
     }
     try {
@@ -202,6 +207,7 @@ function DocumentDetail() {
           </section>
         </>
       )}
+      {confirmDialog}
     </main>
   )
 }
