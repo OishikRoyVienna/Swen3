@@ -10,6 +10,11 @@ services:
       - "9200:9200"
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
 
   postgres:
     image: postgres:17
@@ -85,6 +90,8 @@ services:
         condition: service_healthy
       rustfs:
         condition: service_started
+      elasticsearch:
+        condition: service_healthy
 
   ocr-worker:
     build: ./ocr-worker
@@ -99,6 +106,8 @@ services:
       ELASTICSEARCH_URI: http://elasticsearch:9200
     depends_on:
       rabbitmq:
+        condition: service_healthy
+      elasticsearch:
         condition: service_healthy
   ui:
     build: ./ui-react
