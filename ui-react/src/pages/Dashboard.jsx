@@ -28,7 +28,9 @@ function Dashboard() {
   const errors = submitted ? validateDocument(form) : {}
 
   const loadDocuments = useCallback(() =>
-      api.getDocuments()
+      (search.trim()
+          ? api.searchDocuments(search.trim())
+          : api.getDocuments())
           .then(data => {
             setDocuments(data)
             setListError('')
@@ -38,7 +40,7 @@ function Dashboard() {
                   `Dokumente konnten nicht geladen werden: ${err.message}`
               )
           )
-          .finally(() => setLoading(false)), [])
+          .finally(() => setLoading(false)), [search])
 
   useEffect(() => {
     loadDocuments()
@@ -139,13 +141,7 @@ function Dashboard() {
     }
   }
 
-  const filter = search.trim().toLowerCase()
-
-  const filteredDocuments = documents.filter(doc =>
-      !filter
-      || (doc.title || '').toLowerCase().includes(filter)
-      || (doc.filename || '').toLowerCase().includes(filter)
-  )
+  const filteredDocuments = documents
 
   return (
       <main className="page">
@@ -215,8 +211,8 @@ function Dashboard() {
             <input
                 type="search"
                 className="search"
-                placeholder="Nach Titel oder Dateiname suchen..."
-                aria-label="Dokumente filtern"
+                placeholder="Dokumentinhalt durchsuchen..."
+                aria-label="Dokumente durchsuchen"
                 value={search}
                 onChange={event => setSearch(event.target.value)}
             />
@@ -235,9 +231,9 @@ function Dashboard() {
           {!loading && !listError && (
               filteredDocuments.length === 0 ? (
                   <p className="muted">
-                    {documents.length === 0
+                    {!search.trim()
                         ? 'Noch keine Dokumente vorhanden.'
-                        : 'Keine Dokumente passen zum Filter.'}
+                        : 'Keine passenden Dokumente gefunden.'}
                   </p>
               ) : (
                   <div className="documents">
