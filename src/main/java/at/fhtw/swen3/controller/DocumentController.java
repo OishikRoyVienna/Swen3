@@ -3,6 +3,8 @@ package at.fhtw.swen3.controller;
 
 import at.fhtw.swen3.dto.DocumentDto;
 import at.fhtw.swen3.dto.DocumentRequest;
+import at.fhtw.swen3.entity.Document;
+import at.fhtw.swen3.repository.DocumentRepository;
 import at.fhtw.swen3.service.DocumentService;
 import at.fhtw.swen3.service.RustFsStorageService;
 
@@ -11,13 +13,17 @@ import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,12 +37,17 @@ public class DocumentController {
     private final DocumentService documentService;
     private final RustFsStorageService rustFsStorageService;
 
+    // NEU: Repository zum Abrufen des gespeicherten PDF-Objektschlüssels
+    private final DocumentRepository documentRepository;
+
     public DocumentController(
             DocumentService documentService,
-            RustFsStorageService rustFsStorageService
+            RustFsStorageService rustFsStorageService,
+            DocumentRepository documentRepository
     ) {
         this.documentService = documentService;
         this.rustFsStorageService = rustFsStorageService;
+        this.documentRepository = documentRepository;
     }
 
     // Dokument-Metadaten erstellen
@@ -150,6 +161,61 @@ public class DocumentController {
     public DocumentDto getById(@PathVariable Long id) {
         log.debug("GET /api/documents/{}", id);
         return documentService.getById(id);
+    }
+
+    // NEU: Gespeicherte PDF-Datei für die Vorschau abrufen
+    // GET /api/documents/{id}/file
+    @GetMapping(
+            value = "/{id}/file",
+            produces = MediaType.APPLICATION_PDF_VALUE
+    )
+    public ResponseEntity<byte[]> getDocumentFile(
+            @PathVariable Long id
+    ) {
+        log.info("GET /api/documents/{}/file", id);
+
+        // Dokument aus PostgreSQL laden
+        Document document = documentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Dokument nicht gefunden."
+                ));
+
+        // Prüfen, ob eine PDF-Datei gespeichert wurde
+        String objectKey = document.getObjectKey();
+
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Für dieses Dokument ist keine PDF-Datei gespeichert."
+            );
+        }
+
+        // PDF aus RustFS herunterladen
+        byte[] pdfData = rustFsStorageService.download(objectKey);
+
+        // Dateiname für Browser ermitteln
+        String filename = document.getFilename();
+
+        if (filename == null || filename.isBlank()) {
+            filename = "dokument.pdf";
+        }
+
+        String encodedFilename = URLEncoder.encode(
+                filename,
+                StandardCharsets.UTF_8
+        ).replace("+", "%20");
+
+        // PDF direkt im Browser anzeigen statt herunterladen
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(pdfData.length)
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename*=UTF-8''" + encodedFilename
+                )
+                .header("X-Content-Type-Options", "nosniff")
+                .body(pdfData);
     }
 
     // Dokument aktualisieren

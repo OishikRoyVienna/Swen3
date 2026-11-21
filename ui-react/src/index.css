@@ -1,7 +1,10 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  font-family: Arial, sans-serif;
-  color: #e5e7eb;
-  background-color: #111827;
+  font-family: 'Inter', sans-serif;
+  color: #e8edf7;
+  background: #0b1120;
   font-synthesis: none;
   color-scheme: dark;
 }
@@ -13,41 +16,55 @@
 body {
   margin: 0;
   min-width: 320px;
+  min-height: 100vh;
+  background:
+          radial-gradient(ellipse at 80% 0%, #172647 0%, transparent 45%),
+          #0b1120;
 }
 
-button,
-input,
-select,
-textarea {
+button, input, select, textarea {
   font: inherit;
 }
 
-input,
-select,
-textarea {
+input, select, textarea {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #475569;
-  border-radius: 8px;
-  background: #111827;
-  color: white;
+  padding: 13px 15px;
+  background: #111d31;
+  color: #e8edf7;
+  border: 1px solid #33435e;
+  border-radius: 10px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: #526789;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129,140,248,.15);
+}
+
+a:focus-visible, button:focus-visible {
+  outline: 2px solid #a5b4fc;
+  outline-offset: 3px;
 }
 
 textarea {
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
 }
 
-input:focus,
-select:focus,
-textarea:focus,
-a:focus-visible,
-button:focus-visible {
-  outline: 2px solid #60a5fa;
-  outline-offset: 1px;
+::placeholder {
+  color: #71829e;
+}
+
+::selection {
+  background: #6366f1;
+  color: white;
 }
 
 #root {
-  width: 100%;
   min-height: 100vh;
 }

@@ -29,6 +29,9 @@ import static org.mockito.Mockito.*;
 class DocumentServiceTest {
 
     @Mock
+    private RustFsStorageService rustFsStorageService;
+
+    @Mock
     private DocumentRepository documentRepository;
 
     @Mock
@@ -44,7 +47,8 @@ class DocumentServiceTest {
         documentService = new DocumentServiceImpl(
                 documentRepository,
                 ocrMessageProducer,
-                searchDocumentRepository
+                searchDocumentRepository,
+                rustFsStorageService
         );
     }
 

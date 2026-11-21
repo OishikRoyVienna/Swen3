@@ -26,6 +26,7 @@ function Dashboard() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [fileInputKey, setFileInputKey] = useState(0)
   const [previewUrl, setPreviewUrl] = useState(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const [confirm, confirmDialog] = useConfirm()
 
   const errors = submitted ? validateDocument(form) : {}
@@ -159,7 +160,6 @@ function Dashboard() {
 
   return (
       <main className="page">
-        <h1>Paperless Dashboard</h1>
 
         <p className="subtitle">
           SWEN3 – Dokumentenverwaltung mit React
