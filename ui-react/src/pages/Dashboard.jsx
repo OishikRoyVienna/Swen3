@@ -155,8 +155,6 @@ function Dashboard() {
     }
   }
 
-  const filteredDocuments = documents
-
   return (
       <main className="page">
 
@@ -250,7 +248,7 @@ function Dashboard() {
           )}
 
           {!loading && !listError && (
-              filteredDocuments.length === 0 ? (
+              documents.length === 0 ? (
                   <p className="muted">
                     {!search.trim()
                         ? 'Noch keine Dokumente vorhanden.'
@@ -258,7 +256,7 @@ function Dashboard() {
                   </p>
               ) : (
                   <div className="documents">
-                    {filteredDocuments.map(doc => (
+                    {documents.map(doc => (
                         <article
                             className="document-card"
                             key={doc.id}

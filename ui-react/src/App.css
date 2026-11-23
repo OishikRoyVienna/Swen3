@@ -529,59 +529,6 @@ input[type="file"]::file-selector-button {
   }
 }
 
-/* PDF-Vorschau auf der Dokument-Detailseite */
-
-.document-preview-section {
-  margin: 24px 0;
-  padding: 20px;
-  background: #172033;
-  border: 1px solid #334155;
-  border-radius: 12px;
-}
-
-.document-preview-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
-
-.document-preview-header h2 {
-  margin: 0 0 4px;
-  font-size: 1.1rem;
-}
-
-.document-preview-header p {
-  margin: 0;
-  font-size: .85rem;
-}
-
-.document-preview-container {
-  overflow: hidden;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.document-detail-pdf {
-  display: block;
-  width: 100%;
-  height: 650px;
-  border: none;
-}
-
-@media (max-width: 768px) {
-  .document-preview-section {
-    padding: 12px;
-  }
-
-  .document-detail-pdf {
-    height: 450px;
-  }
-}
-
 /* Dokument-Detailseite: PDF links, Details rechts */
 
 .detail-heading {

@@ -82,13 +82,6 @@ export const api = {
     getDocument: id =>
         request(`/documents/${id}`),
 
-    // Neues Dokument erstellen
-    createDocument: doc =>
-        request('/documents', {
-            method: 'POST',
-            body: JSON.stringify(doc)
-        }),
-
     // Dokument aktualisieren
     updateDocument: (id, doc) =>
         request(`/documents/${id}`, {
