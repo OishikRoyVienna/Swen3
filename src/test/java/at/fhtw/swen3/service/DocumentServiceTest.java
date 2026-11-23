@@ -1,6 +1,7 @@
 package at.fhtw.swen3.service;
 
 import at.fhtw.swen3.dto.DocumentDto;
+import at.fhtw.swen3.dto.DocumentFile;
 import at.fhtw.swen3.dto.DocumentRequest;
 import at.fhtw.swen3.entity.Document;
 import at.fhtw.swen3.exception.MessageQueueException;
@@ -199,5 +200,27 @@ class DocumentServiceTest {
         assertThatThrownBy(() -> documentService.delete(7L))
                 .isInstanceOf(ResourceNotFoundException.class);
         verify(documentRepository, never()).delete(any());
+    }
+
+    @Test
+    void getFile_loadsPdfFromStorage() {
+        Document document = sampleDocument(1L);
+        document.setObjectKey("documents/invoice.pdf");
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(document));
+        when(rustFsStorageService.download("documents/invoice.pdf")).thenReturn(new byte[]{1, 2, 3});
+
+        DocumentFile file = documentService.getFile(1L);
+
+        assertThat(file.filename()).isEqualTo("invoice.pdf");
+        assertThat(file.data()).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void getFile_throwsNotFound_whenNoPdfStored() {
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(sampleDocument(1L)));
+
+        assertThatThrownBy(() -> documentService.getFile(1L))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(rustFsStorageService);
     }
 }

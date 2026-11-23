@@ -2,9 +2,8 @@
 package at.fhtw.swen3.controller;
 
 import at.fhtw.swen3.dto.DocumentDto;
+import at.fhtw.swen3.dto.DocumentFile;
 import at.fhtw.swen3.dto.DocumentRequest;
-import at.fhtw.swen3.entity.Document;
-import at.fhtw.swen3.repository.DocumentRepository;
 import at.fhtw.swen3.service.DocumentService;
 import at.fhtw.swen3.service.RustFsStorageService;
 
@@ -19,7 +18,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -37,17 +35,12 @@ public class DocumentController {
     private final DocumentService documentService;
     private final RustFsStorageService rustFsStorageService;
 
-    // NEU: Repository zum Abrufen des gespeicherten PDF-Objektschlüssels
-    private final DocumentRepository documentRepository;
-
     public DocumentController(
             DocumentService documentService,
-            RustFsStorageService rustFsStorageService,
-            DocumentRepository documentRepository
+            RustFsStorageService rustFsStorageService
     ) {
         this.documentService = documentService;
         this.rustFsStorageService = rustFsStorageService;
-        this.documentRepository = documentRepository;
     }
 
     // Dokument-Metadaten erstellen
@@ -174,48 +167,23 @@ public class DocumentController {
     ) {
         log.info("GET /api/documents/{}/file", id);
 
-        // Dokument aus PostgreSQL laden
-        Document document = documentRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Dokument nicht gefunden."
-                ));
-
-        // Prüfen, ob eine PDF-Datei gespeichert wurde
-        String objectKey = document.getObjectKey();
-
-        if (objectKey == null || objectKey.isBlank()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Für dieses Dokument ist keine PDF-Datei gespeichert."
-            );
-        }
-
-        // PDF aus RustFS herunterladen
-        byte[] pdfData = rustFsStorageService.download(objectKey);
-
-        // Dateiname für Browser ermitteln
-        String filename = document.getFilename();
-
-        if (filename == null || filename.isBlank()) {
-            filename = "dokument.pdf";
-        }
+        DocumentFile file = documentService.getFile(id);
 
         String encodedFilename = URLEncoder.encode(
-                filename,
+                file.filename(),
                 StandardCharsets.UTF_8
         ).replace("+", "%20");
 
         // PDF direkt im Browser anzeigen statt herunterladen
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .contentLength(pdfData.length)
+                .contentLength(file.data().length)
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename*=UTF-8''" + encodedFilename
                 )
                 .header("X-Content-Type-Options", "nosniff")
-                .body(pdfData);
+                .body(file.data());
     }
 
     // Dokument aktualisieren

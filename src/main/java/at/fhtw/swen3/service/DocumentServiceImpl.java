@@ -2,6 +2,7 @@
 package at.fhtw.swen3.service;
 
 import at.fhtw.swen3.dto.DocumentDto;
+import at.fhtw.swen3.dto.DocumentFile;
 import at.fhtw.swen3.dto.DocumentRequest;
 import at.fhtw.swen3.entity.Document;
 import at.fhtw.swen3.exception.ResourceNotFoundException;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -201,6 +203,28 @@ public class DocumentServiceImpl implements DocumentService {
                 "Document {} deletion completed",
                 id
         );
+    }
+
+    @Override
+    public DocumentFile getFile(Long id) {
+        Document document = findOrThrow(id);
+
+        // Ältere Dokumente (nur Metadaten) haben keine gespeicherte PDF
+        String objectKey = document.getObjectKey();
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new ResourceNotFoundException("Für dieses Dokument ist keine PDF-Datei gespeichert.");
+        }
+
+        String filename = document.getFilename();
+        if (filename == null || filename.isBlank()) {
+            filename = "dokument.pdf";
+        }
+
+        try {
+            return new DocumentFile(filename, rustFsStorageService.download(objectKey));
+        } catch (NoSuchKeyException e) {
+            throw new ResourceNotFoundException("Die PDF-Datei dieses Dokuments wurde im Speicher nicht gefunden.");
+        }
     }
 
     private Document findOrThrow(Long id) {

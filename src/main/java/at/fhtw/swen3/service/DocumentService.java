@@ -1,6 +1,7 @@
 package at.fhtw.swen3.service;
 
 import at.fhtw.swen3.dto.DocumentDto;
+import at.fhtw.swen3.dto.DocumentFile;
 import at.fhtw.swen3.dto.DocumentRequest;
 
 import java.util.List;
@@ -17,6 +18,8 @@ public interface DocumentService {
     );
 
     DocumentDto getById(Long id);
+
+    DocumentFile getFile(Long id);
 
     List<DocumentDto> getAll();
     List<DocumentDto> search(String query);
