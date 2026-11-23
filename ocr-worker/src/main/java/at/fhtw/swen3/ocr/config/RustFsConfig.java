@@ -1,6 +1,5 @@
 package at.fhtw.swen3.ocr.config;
 
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,23 +14,14 @@ import java.net.URI;
 public class RustFsConfig {
 
     @Bean
-    public S3Client s3Client(
-            @Value("${paperless.storage.endpoint}") String endpoint,
-            @Value("${paperless.storage.access-key}") String accessKey,
-            @Value("${paperless.storage.secret-key}") String secretKey
-    ) {
+    public S3Client s3Client(@Value("${paperless.storage.endpoint}") String endpoint,
+                             @Value("${paperless.storage.access-key}") String accessKey,
+                             @Value("${paperless.storage.secret-key}") String secretKey) {
         return S3Client.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.US_EAST_1)
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(
-                                        accessKey,
-                                        secretKey
-                                )
-                        )
-                )
-                .forcePathStyle(true)
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKey, secretKey)))
+                .forcePathStyle(true) // RustFS/MinIO erwarten den Bucket im Pfad
                 .build();
     }
 }

@@ -1,6 +1,5 @@
 package at.fhtw.swen3.ocr.messaging;
 
-import at.fhtw.swen3.ocr.exception.OcrProcessingException;
 import at.fhtw.swen3.ocr.service.OcrService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,12 +23,10 @@ public class OcrMessageListener {
         log.info("Received OCR job: {}", message);
         try {
             ocrService.process(message);
-        } catch (OcrProcessingException e) {
-            log.error("OCR job rejected, moving it to the dead-letter queue: {}", e.getMessage());
-            throw new AmqpRejectAndDontRequeueException(e.getMessage(), e);
         } catch (RuntimeException e) {
-            log.error("Unexpected error while processing OCR job {}", message, e);
-            throw new AmqpRejectAndDontRequeueException("Unexpected OCR error", e);
+            // Ungültiger Auftrag oder OCR-Fehler: nicht erneut zustellen, sondern in die Dead-Letter-Queue
+            log.error("OCR job {} rejected, moving it to the dead-letter queue", message, e);
+            throw new AmqpRejectAndDontRequeueException(e.getMessage(), e);
         }
     }
 }

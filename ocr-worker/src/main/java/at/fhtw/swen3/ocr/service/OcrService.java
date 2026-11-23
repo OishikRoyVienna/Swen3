@@ -45,15 +45,9 @@ public class OcrService {
 
         ocrDocumentRepository.save(document);
 
-        log.info("Document {} indexed in Elasticsearch", message.documentId());
-
-        log.info("OCR completed for document {}. Recognized {} characters.",
+        // Nur die Länge loggen, nicht den Text selbst (Dokumente können persönliche Daten enthalten)
+        log.info("OCR job for document {} finished: {} characters recognized and indexed in Elasticsearch",
                 message.documentId(), recognizedText.length());
-
-        log.info("Recognized text for document {}:\n{}",
-                message.documentId(), recognizedText);
-
-        log.info("OCR job for document {} finished", message.documentId());
     }
 
     private void validate(OcrMessage message) {
