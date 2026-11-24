@@ -26,6 +26,7 @@ public final class DocumentMapper {
         dto.setFilename(document.getFilename());
         dto.setContentType(document.getContentType());
         dto.setUploadedAt(document.getUploadedAt());
+        dto.setSummary(document.getSummary());
         List<at.fhtw.swen3.dto.CommentDto> comments = document.getComments().stream()
                 .map(CommentMapper::toDto)
                 .toList();

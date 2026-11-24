@@ -223,4 +223,23 @@ class DocumentServiceTest {
                 .isInstanceOf(ResourceNotFoundException.class);
         verifyNoInteractions(rustFsStorageService);
     }
+
+    @Test
+    void saveSummary_storesSummaryOnDocument() {
+        Document document = sampleDocument(1L);
+        when(documentRepository.findById(1L)).thenReturn(Optional.of(document));
+
+        documentService.saveSummary(1L, "Kurze Zusammenfassung");
+
+        assertThat(document.getSummary()).isEqualTo("Kurze Zusammenfassung");
+        verify(documentRepository).save(document);
+    }
+
+    @Test
+    void saveSummary_throwsNotFound_whenDocumentWasDeleted() {
+        when(documentRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> documentService.saveSummary(99L, "Zusammenfassung"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
 }

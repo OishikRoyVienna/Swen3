@@ -30,6 +30,11 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue summaryQueue(@Value("${paperless.rabbitmq.summary-queue}") String queueName) {
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
     public MessageConverter jsonMessageConverter() {
         return new JacksonJsonMessageConverter();
     }

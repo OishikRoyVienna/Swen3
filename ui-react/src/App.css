@@ -714,3 +714,10 @@ input[type="file"]::file-selector-button {
     min-height: 450px;
   }
 }
+
+/* Zusammenfassung von Gemini auf der Detailseite */
+.summary-text {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

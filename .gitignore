@@ -33,3 +33,6 @@ build/
 .vscode/
 .env*.log
 *.log
+
+# Secrets (z. B. Gemini-API-Key) nie einchecken
+.env

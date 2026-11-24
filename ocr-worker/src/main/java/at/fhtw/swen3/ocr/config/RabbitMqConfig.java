@@ -28,6 +28,16 @@ public class RabbitMqConfig {
         return QueueBuilder.durable(deadLetterQueueName).build();
     }
 
+    // Muss exakt wie im GenAI-Worker deklariert sein (inkl. Dead-Letter-Argumente)
+    @Bean
+    public Queue genAiQueue(@Value("${paperless.rabbitmq.genai-queue}") String queueName,
+                            @Value("${paperless.rabbitmq.genai-dead-letter-queue}") String deadLetterQueueName) {
+        return QueueBuilder.durable(queueName)
+                .deadLetterExchange("")
+                .deadLetterRoutingKey(deadLetterQueueName)
+                .build();
+    }
+
     @Bean
     public MessageConverter jsonMessageConverter() {
         // The target type is inferred from the @RabbitListener method parameter (OcrMessage)

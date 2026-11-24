@@ -1,7 +1,9 @@
 package at.fhtw.swen3.ocr.service;
 
 import at.fhtw.swen3.ocr.exception.OcrProcessingException;
+import at.fhtw.swen3.ocr.messaging.GenAiMessage;
 import at.fhtw.swen3.ocr.messaging.OcrMessage;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.junit.jupiter.api.Test;
 import at.fhtw.swen3.ocr.search.OcrDocumentRepository;
 
@@ -22,11 +24,15 @@ class OcrServiceTest {
     private final OcrDocumentRepository ocrDocumentRepository =
             mock(OcrDocumentRepository.class);
 
+    private final RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
+
     private final OcrService ocrService =
             new OcrService(
                     rustFsStorageService,
                     tesseractOcrService,
-                    ocrDocumentRepository
+                    ocrDocumentRepository,
+                    rabbitTemplate,
+                    "paperless.genai"
             );
 
     @Test
@@ -49,6 +55,7 @@ class OcrServiceTest {
 
         verify(rustFsStorageService).download("documents/invoice.pdf");
         verify(tesseractOcrService).recognize(pdfBytes);
+        verify(rabbitTemplate).convertAndSend("paperless.genai", new GenAiMessage(1L, "Hello World"));
     }
 
     @Test

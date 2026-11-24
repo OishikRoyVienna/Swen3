@@ -11,6 +11,7 @@ public class DocumentDto {
     private String contentType;
     private LocalDateTime uploadedAt;
     private List<CommentDto> comments;
+    private String summary;
 
     public Long getId() {
         return id;
@@ -58,5 +59,13 @@ public class DocumentDto {
 
     public void setComments(List<CommentDto> comments) {
         this.comments = comments;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 }

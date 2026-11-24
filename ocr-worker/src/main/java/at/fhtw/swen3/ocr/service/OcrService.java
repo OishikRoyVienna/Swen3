@@ -1,9 +1,12 @@
 package at.fhtw.swen3.ocr.service;
 
 import at.fhtw.swen3.ocr.exception.OcrProcessingException;
+import at.fhtw.swen3.ocr.messaging.GenAiMessage;
 import at.fhtw.swen3.ocr.messaging.OcrMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import at.fhtw.swen3.ocr.search.OcrDocumentRepository;
 import at.fhtw.swen3.ocr.search.OcrDocument;
@@ -16,13 +19,19 @@ public class OcrService {
     private final RustFsStorageService rustFsStorageService;
     private final TesseractOcrService tesseractOcrService;
     private final OcrDocumentRepository ocrDocumentRepository;
+    private final RabbitTemplate rabbitTemplate;
+    private final String genAiQueue;
 
     public OcrService(RustFsStorageService rustFsStorageService,
                       TesseractOcrService tesseractOcrService,
-                      OcrDocumentRepository ocrDocumentRepository) {
+                      OcrDocumentRepository ocrDocumentRepository,
+                      RabbitTemplate rabbitTemplate,
+                      @Value("${paperless.rabbitmq.genai-queue}") String genAiQueue) {
         this.rustFsStorageService = rustFsStorageService;
         this.tesseractOcrService = tesseractOcrService;
         this.ocrDocumentRepository = ocrDocumentRepository;
+        this.rabbitTemplate = rabbitTemplate;
+        this.genAiQueue = genAiQueue;
     }
 
     public void process(OcrMessage message) {
@@ -48,6 +57,10 @@ public class OcrService {
         // Nur die Länge loggen, nicht den Text selbst (Dokumente können persönliche Daten enthalten)
         log.info("OCR job for document {} finished: {} characters recognized and indexed in Elasticsearch",
                 message.documentId(), recognizedText.length());
+
+        // Erkannten Text an den GenAI-Worker weitergeben, der die Zusammenfassung erstellt
+        rabbitTemplate.convertAndSend(genAiQueue, new GenAiMessage(message.documentId(), recognizedText));
+        log.info("Text of document {} sent to queue '{}' for summarization", message.documentId(), genAiQueue);
     }
 
     private void validate(OcrMessage message) {

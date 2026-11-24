@@ -25,6 +25,10 @@ public class Document {
     @Column(name = "object_key")
     private String objectKey;
 
+    // Zusammenfassung von Gemini; länger als die Standard-255-Zeichen
+    @Column(length = 10000)
+    private String summary;
+
     @Column(nullable = false)
     private LocalDateTime uploadedAt;
 
@@ -88,5 +92,13 @@ public class Document {
 
     public void setObjectKey(String objectKey) {
         this.objectKey = objectKey;
+    }
+
+    public String getSummary() {
+        return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 }

@@ -109,6 +109,21 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+  genai-worker:
+    build: ./genai-worker
+    container_name: swen3-genai-worker
+    # Gemini-API-Key aus der lokalen .env (nicht im Repo); fehlt sie, startet der Rest trotzdem
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: paperless
+      SPRING_RABBITMQ_PASSWORD: paperless
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
   ui:
     build: ./ui-react
     container_name: swen3-ui

@@ -227,6 +227,14 @@ public class DocumentServiceImpl implements DocumentService {
         }
     }
 
+    @Override
+    public void saveSummary(Long id, String summary) {
+        Document document = findOrThrow(id);
+        document.setSummary(summary);
+        Persistence.call("save summary of document " + id, () -> documentRepository.save(document));
+        log.info("Summary for document {} saved ({} characters)", id, summary.length());
+    }
+
     private Document findOrThrow(Long id) {
         return Persistence.call(
                 "load document " + id,

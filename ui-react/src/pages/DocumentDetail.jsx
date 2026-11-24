@@ -85,6 +85,37 @@ function DocumentDetail() {
     }
   }, [id, validId])
 
+  // Die Zusammenfassung entsteht im Hintergrund (OCR + Gemini). Solange sie fehlt,
+  // alle 5 Sekunden nachfragen, höchstens 2 Minuten lang. Nur "summary" wird übernommen,
+  // damit ein gerade bearbeitetes Formular nicht überschrieben wird.
+  const waitingForSummary = Boolean(doc) && !doc.summary
+
+  useEffect(() => {
+    if (!waitingForSummary) {
+      return
+    }
+
+    let attempts = 0
+    const timer = setInterval(() => {
+      attempts += 1
+      if (attempts > 24) {
+        clearInterval(timer)
+        return
+      }
+      api.getDocument(id)
+          .then(fresh => {
+            if (fresh.summary) {
+              setDoc(previous => ({ ...previous, summary: fresh.summary }))
+            }
+          })
+          .catch(() => {
+            // einzelne fehlgeschlagene Abfrage ignorieren, beim nächsten Intervall erneut versuchen
+          })
+    }, 5000)
+
+    return () => clearInterval(timer)
+  }, [id, waitingForSummary])
+
   async function reloadComments() {
     try {
       setComments(await api.getComments(id))
@@ -246,6 +277,19 @@ function DocumentDetail() {
                 </section>
 
                 <aside className="detail-sidebar">
+                  {/* ZUSAMMENFASSUNG (von Gemini, kommt nach OCR automatisch) */}
+                  <section className="detail-panel">
+                    <h2>Zusammenfassung</h2>
+                    {doc.summary ? (
+                        <p className="summary-text">{doc.summary}</p>
+                    ) : (
+                        <p className="muted">
+                          Zusammenfassung wird erstellt … sie erscheint hier automatisch,
+                          sobald sie fertig ist.
+                        </p>
+                    )}
+                  </section>
+
                   {/* DOKUMENTDETAILS */}
                   <section className="detail-panel">
                     <h2>Dokumentdetails</h2>

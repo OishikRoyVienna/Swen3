@@ -27,4 +27,6 @@ public interface DocumentService {
     DocumentDto update(Long id, DocumentRequest request);
 
     void delete(Long id);
+
+    void saveSummary(Long id, String summary);
 }
